@@ -5,6 +5,8 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Numerics;
 using System.Data;
+using System.Drawing;
+using static AdventOfCode.Day03;
 
 namespace AdventOfCode
 {
@@ -16,7 +18,7 @@ namespace AdventOfCode
         {
             public int Width;
             public int Height;
-            public List<List<char>> Grid;
+            public List<List<DisplayCoordinate>> Grid;
         }
 
         public struct PartNumber
@@ -45,6 +47,12 @@ namespace AdventOfCode
             public List<int> adajacentNumbers;
         }
 
+        public struct DisplayCoordinate
+        {
+            public char value;
+            public ConsoleColor backgroundColor;
+            public ConsoleColor textColor;
+        }
         #endregion
 
         #region BoilerPlate
@@ -69,7 +77,7 @@ namespace AdventOfCode
             {
                 foreach(var col in row)
                 {
-                    Console.Write(col.ToString());
+                    Console.Write(col.value.ToString());
                 }
                 Console.WriteLine();
 
@@ -113,8 +121,12 @@ namespace AdventOfCode
             {
                 foreach (var col in row)
                 {
-                    Console.Write(col.ToString());
+                    Console.BackgroundColor = col.backgroundColor; 
+                    Console.ForegroundColor = col.textColor;
+                    Console.Write(col.value);
                 }
+                Console.BackgroundColor = ConsoleColor.Black;
+                Console.ForegroundColor = ConsoleColor.White;
                 Console.WriteLine();
 
             }
@@ -129,11 +141,20 @@ namespace AdventOfCode
 
             InputSchematic.Width = _input[0].Length;
             InputSchematic.Height = _input.Length;
-            InputSchematic.Grid = new List<List<char>>();
+            InputSchematic.Grid = new List<List<DisplayCoordinate>>();
             foreach (var line in input)
             {
-                List<Char> Row = line.ToCharArray().ToList();
-                InputSchematic.Grid.Add(line.ToCharArray().ToList());
+                List<DisplayCoordinate> row = new List<DisplayCoordinate>();
+                foreach (var col in line)
+                {
+                    DisplayCoordinate GridValue = new DisplayCoordinate();
+                    GridValue.backgroundColor = ConsoleColor.Black;
+                    GridValue.textColor = ConsoleColor.White;
+                    GridValue.value = col;
+                    row.Add(GridValue);
+                   
+                }
+                InputSchematic.Grid.Add(row);
             }
 
             //LogSchematic(InputSchematic);
@@ -164,18 +185,18 @@ namespace AdventOfCode
             {
                 for(int col = 0; col < schematic.Width; col++)
                 {
-                    if (Char.IsDigit(schematic.Grid[row][col]))
+                    if (Char.IsDigit(schematic.Grid[row][col].value))
                     {
                         PartNumber foundPartNumber = new PartNumber();
                         foundPartNumber.row = row;
                         foundPartNumber.startIndex = col;
                         foundPartNumber.length = 1;
-                        foundPartNumber.value = schematic.Grid[row][col] - '0';
+                        foundPartNumber.value = schematic.Grid[row][col].value - '0';
 
                        
                         for(int next = col+1; next < schematic.Width; next++)
                         {
-                            char nextChar = schematic.Grid[row][next];
+                            char nextChar = schematic.Grid[row][next].value;
                             if (Char.IsDigit(nextChar))
                             {
                                 int nextDigit = nextChar - '0';
@@ -224,7 +245,7 @@ namespace AdventOfCode
                 {
                     for (int col = StartSearchCol; col < schematic.Width && col <= EndSearchCol; col++)
                     {
-                        part.symbolsNearby.Add(schematic.Grid[row][col]);
+                        part.symbolsNearby.Add(schematic.Grid[row][col].value);
                     }
                 }
                 returnParts.Add(part);
@@ -261,8 +282,8 @@ namespace AdventOfCode
             Schematic schematic = ParseInput(_input);
             List<Coordinate> gearLocations = FindGears(schematic);
             List<Gear> gears = ParseGears(gearLocations, schematic);
-            //LogFinalGearView(gears, schematic);
-            int sum = SumGearWithRatios(gears);
+            int sum = SumGearWithRatios(gears, schematic);
+            LogFinalGearView(gears, schematic);
 
             return sum.ToString();
         }
@@ -276,8 +297,14 @@ namespace AdventOfCode
             {
                 for (int col = 0; col < schematic.Width; col++)
                 {
-                    if (schematic.Grid[row][col] == '*')
+                    if (schematic.Grid[row][col].value == '*')
                     {
+                        var gearSymbol = schematic.Grid[row][col];
+                        gearSymbol.backgroundColor = ConsoleColor.Gray;
+                        gearSymbol.textColor = ConsoleColor.Black;
+
+                        schematic.Grid[row][col] = gearSymbol;
+
                         Coordinate foundGear = new Coordinate()
                         {
                             row = row,
@@ -306,15 +333,25 @@ namespace AdventOfCode
                 //Check Left
                 if (gearLocation.col > 0)
                 {
-                    if (Char.IsDigit(schematic.Grid[gearLocation.row][gearLocation.col - 1]))
+                    if (Char.IsDigit(schematic.Grid[gearLocation.row][gearLocation.col - 1].value))
                     {
-                        int tempValue = schematic.Grid[gearLocation.row][gearLocation.col - 1] - '0';
+                        var gearSymbol = schematic.Grid[gearLocation.row][gearLocation.col - 1];
+                        gearSymbol.backgroundColor = ConsoleColor.DarkBlue;
+                        gearSymbol.textColor = ConsoleColor.Black;
+                        schematic.Grid[gearLocation.row][gearLocation.col - 1] = gearSymbol;
+
+                        int tempValue = schematic.Grid[gearLocation.row][gearLocation.col - 1].value - '0';
 
                         for (int i = (gearLocation.col - 2); i >= 0; i--)
                         {
-                            if (Char.IsDigit(schematic.Grid[gearLocation.row][i]))
+                            if (Char.IsDigit(schematic.Grid[gearLocation.row][i].value))
                             {
-                                int preceedingDigit = schematic.Grid[gearLocation.row][i] - '0';
+                                gearSymbol = schematic.Grid[gearLocation.row][i];
+                                gearSymbol.backgroundColor = ConsoleColor.DarkBlue;
+                                gearSymbol.textColor = ConsoleColor.Black;
+                                schematic.Grid[gearLocation.row][i] = gearSymbol;
+
+                                int preceedingDigit = schematic.Grid[gearLocation.row][i].value - '0';
                                 tempValue = JoinNumber(preceedingDigit, tempValue);
                             }
                             else { break; }
@@ -325,15 +362,25 @@ namespace AdventOfCode
                 // Check Right
                 if (gearLocation.col < schematic.Width - 1)
                 {
-                    if (Char.IsDigit(schematic.Grid[gearLocation.row][gearLocation.col + 1]))
+                    if (Char.IsDigit(schematic.Grid[gearLocation.row][gearLocation.col + 1].value))
                     {
-                        int tempValue = schematic.Grid[gearLocation.row][gearLocation.col + 1] - '0';
+                        var gearSymbol = schematic.Grid[gearLocation.row][gearLocation.col + 1];
+                        gearSymbol.backgroundColor = ConsoleColor.DarkBlue;
+                        gearSymbol.textColor = ConsoleColor.Black;
+                        schematic.Grid[gearLocation.row][gearLocation.col + 1] = gearSymbol;
+
+                        int tempValue = schematic.Grid[gearLocation.row][gearLocation.col + 1].value - '0';
 
                         for (int i = (gearLocation.col + 2); i < schematic.Width; i++)
                         {
-                            if (Char.IsDigit(schematic.Grid[gearLocation.row][i]))
+                            if (Char.IsDigit(schematic.Grid[gearLocation.row][i].value))
                             {
-                                int nextDigit = schematic.Grid[gearLocation.row][i] - '0';
+                                gearSymbol = schematic.Grid[gearLocation.row][i];
+                                gearSymbol.backgroundColor = ConsoleColor.DarkBlue;
+                                gearSymbol.textColor = ConsoleColor.Black;
+                                schematic.Grid[gearLocation.row][i] = gearSymbol;
+
+                                int nextDigit = schematic.Grid[gearLocation.row][i].value - '0';
                                 tempValue = JoinNumber(tempValue, nextDigit);
                             }
                             else { break; }
@@ -355,35 +402,42 @@ namespace AdventOfCode
                     CheckAdjacentRow(schematic, gearLocation, parsedGear, rowToCheck);
                 }
                 gears.Add(parsedGear);
-                LogGear(parsedGear);
+                //LogGear(parsedGear);
             }
-
             return gears;
-
-            
         }
 
         void CheckAdjacentRow(Schematic schematic, Coordinate gearLocation, Gear parsedGear, int rowToCheck)
         {
-            if (Char.IsDigit(schematic.Grid[rowToCheck][gearLocation.col]))
+            if (Char.IsDigit(schematic.Grid[rowToCheck][gearLocation.col].value))
             {
                 int startCol = gearLocation.col;
                 for (int i = (gearLocation.col - 1); i >= 0; i--)
                 {
-                    if (Char.IsDigit(schematic.Grid[rowToCheck][i]))
+                    if (Char.IsDigit(schematic.Grid[rowToCheck][i].value))
                     {
                         startCol = i;
                     }
                     else { break; }
                 }
 
-                int tempValue = schematic.Grid[rowToCheck][startCol] - '0';
+                var gearSymbol = schematic.Grid[rowToCheck][startCol];
+                gearSymbol.backgroundColor = ConsoleColor.DarkBlue;
+                gearSymbol.textColor = ConsoleColor.Black;
+                schematic.Grid[rowToCheck][startCol] = gearSymbol;
+
+                int tempValue = schematic.Grid[rowToCheck][startCol].value - '0';
 
                 for (int i = startCol + 1; i < schematic.Width; i++)
                 {
-                    if (Char.IsDigit(schematic.Grid[rowToCheck][i]))
+                    if (Char.IsDigit(schematic.Grid[rowToCheck][i].value))
                     {
-                        int nextDigit = schematic.Grid[rowToCheck][i] - '0';
+                        gearSymbol = schematic.Grid[rowToCheck][i];
+                        gearSymbol.backgroundColor = ConsoleColor.DarkBlue;
+                        gearSymbol.textColor = ConsoleColor.Black;
+                        schematic.Grid[rowToCheck][i] = gearSymbol;
+
+                        int nextDigit = schematic.Grid[rowToCheck][i].value - '0';
                         tempValue = JoinNumber(tempValue, nextDigit);
                     }
                     else { break; }
@@ -395,25 +449,35 @@ namespace AdventOfCode
                 //Left corner
                 if (gearLocation.col > 0)
                 {
-                    if (Char.IsDigit(schematic.Grid[rowToCheck][gearLocation.col-1]))
+                    if (Char.IsDigit(schematic.Grid[rowToCheck][gearLocation.col-1].value))
                     {
                         int startCol = gearLocation.col-1;
                         for (int i = (gearLocation.col - 1); i >= 0; i--)
                         {
-                            if (Char.IsDigit(schematic.Grid[rowToCheck][i]))
+                            if (Char.IsDigit(schematic.Grid[rowToCheck][i].value))
                             {
                                 startCol = i;
                             }
                             else { break; }
                         }
 
-                        int tempValue = schematic.Grid[rowToCheck][startCol] - '0';
+                        var gearSymbol = schematic.Grid[rowToCheck][startCol];
+                        gearSymbol.backgroundColor = ConsoleColor.DarkBlue;
+                        gearSymbol.textColor = ConsoleColor.Black;
+                        schematic.Grid[rowToCheck][startCol] = gearSymbol;
+
+                        int tempValue = schematic.Grid[rowToCheck][startCol].value - '0';
 
                         for (int i = startCol + 1; i < schematic.Width; i++)
                         {
-                            if (Char.IsDigit(schematic.Grid[rowToCheck][i]))
+                            if (Char.IsDigit(schematic.Grid[rowToCheck][i].value))
                             {
-                                int nextDigit = schematic.Grid[rowToCheck][i] - '0';
+                                gearSymbol = schematic.Grid[rowToCheck][i];
+                                gearSymbol.backgroundColor = ConsoleColor.DarkBlue;
+                                gearSymbol.textColor = ConsoleColor.Black;
+                                schematic.Grid[rowToCheck][i] = gearSymbol;
+
+                                int nextDigit = schematic.Grid[rowToCheck][i].value - '0';
                                 tempValue = JoinNumber(tempValue, nextDigit);
                             }
                             else { break; }
@@ -424,16 +488,27 @@ namespace AdventOfCode
                 //Right corner
                 if (gearLocation.col < schematic.Width - 1)
                 {
-                    if (Char.IsDigit(schematic.Grid[rowToCheck][gearLocation.col + 1]))
+                    if (Char.IsDigit(schematic.Grid[rowToCheck][gearLocation.col + 1].value))
                     {
                         int startCol = gearLocation.col + 1;
-                        int tempValue = schematic.Grid[rowToCheck][startCol] - '0';
+
+                        var gearSymbol = schematic.Grid[rowToCheck][startCol];
+                        gearSymbol.backgroundColor = ConsoleColor.DarkBlue;
+                        gearSymbol.textColor = ConsoleColor.Black;
+                        schematic.Grid[rowToCheck][startCol] = gearSymbol;
+
+                        int tempValue = schematic.Grid[rowToCheck][startCol].value - '0';
 
                         for (int i = startCol + 1; i < schematic.Width; i++)
                         {
-                            if (Char.IsDigit(schematic.Grid[rowToCheck][i]))
+                            if (Char.IsDigit(schematic.Grid[rowToCheck][i].value))
                             {
-                                int nextDigit = schematic.Grid[rowToCheck][i] - '0';
+                                gearSymbol = schematic.Grid[rowToCheck][i];
+                                gearSymbol.backgroundColor = ConsoleColor.DarkBlue;
+                                gearSymbol.textColor = ConsoleColor.Black;
+                                schematic.Grid[rowToCheck][i] = gearSymbol;
+
+                                int nextDigit = schematic.Grid[rowToCheck][i].value - '0';
                                 tempValue = JoinNumber(tempValue, nextDigit);
                             }
                             else { break; }
@@ -443,14 +518,22 @@ namespace AdventOfCode
                 }
             }
         }
-        private int SumGearWithRatios(List<Gear> gears)
+        private int SumGearWithRatios(List<Gear> gears, Schematic schematic)
         {
             int sum = 0;
             foreach(var gear in gears)
             {
                 if(gear.adajacentNumbers.Count == 2)
                 {
-                    sum += (gear.adajacentNumbers[0] * gear.adajacentNumbers[1]);
+                    var gearSymbol = schematic.Grid[gear.coordinate.row][gear.coordinate.col];
+                    gearSymbol.backgroundColor = ConsoleColor.Blue;
+                    gearSymbol.textColor = ConsoleColor.Black;
+
+                    schematic.Grid[gear.coordinate.row][gear.coordinate.col] = gearSymbol;
+
+                    int Ratio = (gear.adajacentNumbers[0] * gear.adajacentNumbers[1]);
+                    Console.WriteLine(Ratio.ToString());
+                    sum += Ratio;
                 }
             }
             return sum;
