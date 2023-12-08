@@ -283,7 +283,7 @@ namespace AdventOfCode
             List<Coordinate> gearLocations = FindGears(schematic);
             List<Gear> gears = ParseGears(gearLocations, schematic);
             int sum = SumGearWithRatios(gears, schematic);
-            LogFinalGearView(gears, schematic);
+            //LogFinalGearView(gears, schematic);
 
             return sum.ToString();
         }
@@ -333,16 +333,26 @@ namespace AdventOfCode
                 //Check Left
                 if (gearLocation.col > 0)
                 {
-                    if (Char.IsDigit(schematic.Grid[gearLocation.row][gearLocation.col - 1].value))
+                    int startCol = gearLocation.col - 1;
+                    if (Char.IsDigit(schematic.Grid[gearLocation.row][gearLocation.col -1].value))
                     {
-                        var gearSymbol = schematic.Grid[gearLocation.row][gearLocation.col - 1];
+                        for (int i = (gearLocation.col - 2); i >= 0; i--)
+                        {
+                            if (Char.IsDigit(schematic.Grid[gearLocation.row][i].value))
+                            {
+                                startCol = i;
+                            }
+                            else { break; }
+                        }
+
+                        var gearSymbol = schematic.Grid[gearLocation.row][startCol];
                         gearSymbol.backgroundColor = ConsoleColor.DarkBlue;
                         gearSymbol.textColor = ConsoleColor.Black;
-                        schematic.Grid[gearLocation.row][gearLocation.col - 1] = gearSymbol;
+                        schematic.Grid[gearLocation.row][startCol] = gearSymbol;
 
-                        int tempValue = schematic.Grid[gearLocation.row][gearLocation.col - 1].value - '0';
+                        int tempValue = schematic.Grid[gearLocation.row][startCol].value - '0';
 
-                        for (int i = (gearLocation.col - 2); i >= 0; i--)
+                        for (int i = startCol + 1; i < schematic.Width; i++)
                         {
                             if (Char.IsDigit(schematic.Grid[gearLocation.row][i].value))
                             {
@@ -351,8 +361,8 @@ namespace AdventOfCode
                                 gearSymbol.textColor = ConsoleColor.Black;
                                 schematic.Grid[gearLocation.row][i] = gearSymbol;
 
-                                int preceedingDigit = schematic.Grid[gearLocation.row][i].value - '0';
-                                tempValue = JoinNumber(preceedingDigit, tempValue);
+                                int nextDigit = schematic.Grid[gearLocation.row][i].value - '0';
+                                tempValue = JoinNumber(tempValue, nextDigit);
                             }
                             else { break; }
                         }
@@ -532,7 +542,7 @@ namespace AdventOfCode
                     schematic.Grid[gear.coordinate.row][gear.coordinate.col] = gearSymbol;
 
                     int Ratio = (gear.adajacentNumbers[0] * gear.adajacentNumbers[1]);
-                    Console.WriteLine(Ratio.ToString());
+                    //Console.WriteLine(Ratio.ToString());
                     sum += Ratio;
                 }
             }
